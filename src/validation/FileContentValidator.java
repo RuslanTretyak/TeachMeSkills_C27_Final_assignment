@@ -3,11 +3,12 @@ package validation;
 import consts.CheckContentPatterns;
 import consts.InvoiceContentPatterns;
 import consts.OrderContentPattern;
+import exception.IncorrectContentInFileException;
 
 import java.util.List;
 
 public class FileContentValidator {
-    public static boolean checkCheckContentValid(List<String> lines) {
+    public static boolean checkCheckContentValid(String fileName, List<String> lines) throws IncorrectContentInFileException {
         boolean checkingStage1 = false;
         boolean checkingStage2 = false;
         boolean checkingStage3 = false;
@@ -20,9 +21,12 @@ public class FileContentValidator {
                 checkingStage3 = true;
             }
         }
-        return checkingStage1 && checkingStage2 && checkingStage3;
+        if(!(checkingStage1 && checkingStage2 && checkingStage3)) {
+            throw new IncorrectContentInFileException("incorrect content in file '" + fileName + "'");
+        }
+        return true;
     }
-    public static boolean checkInvoiceContentValid(List<String> lines) {
+    public static boolean checkInvoiceContentValid(String fileName, List<String> lines) throws IncorrectContentInFileException {
         boolean checkingStage1 = false;
         boolean checkingStage2 = false;
         boolean checkingStage3 = false;
@@ -35,9 +39,12 @@ public class FileContentValidator {
                 checkingStage3 = true;
             }
         }
-        return checkingStage1 && checkingStage2 && checkingStage3;
+        if(!(checkingStage1 && checkingStage2 && checkingStage3)) {
+            throw new IncorrectContentInFileException("incorrect content in file '" + fileName + "'");
+        }
+        return true;
     }
-    public static boolean checkOrderContentValid(List<String> lines) {
+    public static boolean checkOrderContentValid(String fileName, List<String> lines) throws IncorrectContentInFileException {
         boolean checkingStage1 = false;
         boolean checkingStage2 = false;
         for (String line : lines) {
@@ -47,6 +54,9 @@ public class FileContentValidator {
                 checkingStage2 = true;
             }
         }
-        return checkingStage1 && checkingStage2;
+        if(!(checkingStage1 && checkingStage2)) {
+            throw new IncorrectContentInFileException("incorrect content in file '" + fileName + "'");
+        }
+        return true;
     }
 }

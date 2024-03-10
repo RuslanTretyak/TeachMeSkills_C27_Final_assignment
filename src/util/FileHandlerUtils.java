@@ -1,6 +1,10 @@
 package util;
 
 import consts.*;
+import exception.EmptyDirectoryException;
+import exception.IncorrectContentInFileException;
+import exception.IncorrectDirectoryPathException;
+import logger.Logger;
 import validation.FileContentValidator;
 import validation.FileNameValidator;
 
@@ -12,23 +16,40 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class FileHandlerUtils {
-    public static List<File> getFilesFromDirectory(String directoryPath, FileNamePattern fileNamePattern) {
+    public static boolean checkInputDirectory(File directory) throws IncorrectDirectoryPathException {
+        if (!directory.isDirectory()) {
+            throw new IncorrectDirectoryPathException("the object at the entered path is not a folder");
+        } else if (directory.listFiles().length == 0) {
+            throw new IncorrectDirectoryPathException("the folder at the entered path is empty");
+        } else if (!(new File(directory + "\\checks").exists())) {
+            throw new IncorrectDirectoryPathException("There is no \"checks\" folder at the specified path");
+        } else if (!(new File(directory + "\\invoices").exists())) {
+            throw new IncorrectDirectoryPathException("There is no \"invoices\" folder at the specified path");
+        } else if (!(new File(directory + "\\orders").exists())) {
+            throw new IncorrectDirectoryPathException("There is no \"orders\" folder at the specified path");
+        }
+        return true;
+    }
+
+    public static List<File> getFilesFromDirectory(String directoryPath, FileNamePattern fileNamePattern) throws EmptyDirectoryException {
         File file = new File(directoryPath);
         List<File> rowListOfFiles;
         List<File> resultListOfFiles = new ArrayList<>();
         if (file.listFiles() != null) {
-            rowListOfFiles = Arrays.asList(file.listFiles());
-            Iterator<File> iterator = rowListOfFiles.listIterator();
-            while (iterator.hasNext()) {
-                File tempFile = iterator.next();
-                if (FileNameValidator.isFileValid(fileNamePattern.getPattern(), tempFile)) {
-                    resultListOfFiles.add(tempFile);
-                } else {
-                    moveFile(tempFile, FilePathConst.NON_VALID_FILE_PATH);
+            if (file.listFiles().length != 0) {
+                rowListOfFiles = Arrays.asList(file.listFiles());
+                Iterator<File> iterator = rowListOfFiles.listIterator();
+                while (iterator.hasNext()) {
+                    File tempFile = iterator.next();
+                    if (FileNameValidator.isFileValid(fileNamePattern.getPattern(), tempFile)) {
+                        resultListOfFiles.add(tempFile);
+                    } else {
+                        moveFile(tempFile, FilePathConst.NON_VALID_FILE_PATH);
+                    }
                 }
+            } else {
+                throw new EmptyDirectoryException("the folder '" + directoryPath + "' is empty");
             }
-        } else {
-            throw new EmptyStackException();
         }
         return resultListOfFiles;
     }
@@ -40,11 +61,14 @@ public class FileHandlerUtils {
                 resultData.put(tempFile.getAbsolutePath(),
                         bufferedReader.lines().map(String::trim).collect(Collectors.toList()));
             } catch (FileNotFoundException e) {
-                System.out.println("file not found");
+                System.out.println("file '" + tempFile + "' not found");
+                Logger.writeExceptionLog("file '" + tempFile + "' not found");
             } catch (IOException e) {
-                System.out.println("IOex");
+                System.out.println("file '" + tempFile + "' access error");
+                Logger.writeExceptionLog("file '" + tempFile + "' access error");
             } catch (Exception e) {
-                System.out.println("ex");
+                System.out.println("error while reading file '" + tempFile + "'");
+                Logger.writeExceptionLog("error while reading file '" + tempFile + "'");
             }
         }
         return resultData;
@@ -55,24 +79,39 @@ public class FileHandlerUtils {
         for (Map.Entry<String, List<String>> entry : listOfData.entrySet()) {
             switch (fileNamePattern) {
                 case CHECK_NAME_PATTERN:
-                    if (FileContentValidator.checkCheckContentValid(entry.getValue())) {
-                        sum = sum.add(getAmount(entry.getValue(), CheckContentPatterns.AMOUNT_LINE));
-                    } else {
-                        moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                    try {
+                        if (FileContentValidator.checkCheckContentValid(entry.getKey(), entry.getValue())) {
+                            sum = sum.add(getAmount(entry.getValue(), CheckContentPatterns.AMOUNT_LINE));
+                        } else {
+                            moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                        }
+                    } catch (IncorrectContentInFileException e) {
+                        System.out.println(e.getMessage());
+                        Logger.writeExceptionLog(e.getMessage());
                     }
                     break;
                 case INVOICE_NAME_PATTERN:
-                    if (FileContentValidator.checkInvoiceContentValid(entry.getValue())) {
-                        sum = sum.add(getAmount(entry.getValue(), InvoiceContentPatterns.AMOUNT_LINE));
-                    } else {
-                        moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                    try {
+                        if (FileContentValidator.checkInvoiceContentValid(entry.getKey(), entry.getValue())) {
+                            sum = sum.add(getAmount(entry.getValue(), InvoiceContentPatterns.AMOUNT_LINE));
+                        } else {
+                            moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                        }
+                    } catch (IncorrectContentInFileException e) {
+                        System.out.println(e.getMessage());
+                        Logger.writeExceptionLog(e.getMessage());
                     }
                     break;
                 case ORDER_NAME_PATTERN:
-                    if (FileContentValidator.checkOrderContentValid(entry.getValue())) {
-                        sum = sum.add(getAmount(entry.getValue(), OrderContentPattern.AMOUNT_LINE));
-                    } else {
-                        moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                    try {
+                        if (FileContentValidator.checkOrderContentValid(entry.getKey(), entry.getValue())) {
+                            sum = sum.add(getAmount(entry.getValue(), OrderContentPattern.AMOUNT_LINE));
+                        } else {
+                            moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                        }
+                    } catch (IncorrectContentInFileException e) {
+                        System.out.println(e.getMessage());
+                        Logger.writeExceptionLog(e.getMessage());
                     }
                     break;
             }
@@ -88,9 +127,11 @@ public class FileHandlerUtils {
         try {
             isFileCreated = newFile.createNewFile();
         } catch (IOException e) {
-            System.out.println("IOex");
+            System.out.println("file '" + newFile.getName() + "' access error during creation");
+            Logger.writeExceptionLog("file '" + newFile.getName() + "' access error");
         } catch (Exception e) {
-            System.out.println("ex");
+            System.out.println("error during creation file '" + newFile.getName() + "'");
+            Logger.writeExceptionLog("error while writing file '" + newFile.getName() + "'");
         }
         if (isFileCreated) {
             try (FileInputStream fileInputStream = new FileInputStream(fileToMove);
@@ -99,11 +140,14 @@ public class FileHandlerUtils {
                 isFileCopied = true;
 
             } catch (FileNotFoundException e) {
-                System.out.println("FileNotFoundException");
+                System.out.println("files '" + fileToMove.getName() + "/" + newFile.getName() + "' not found during copying");
+                Logger.writeExceptionLog("files '" + fileToMove.getName() + "/" + newFile.getName() + "' not found during copying");
             } catch (IOException e) {
-                System.out.println("IOException");
+                System.out.println("files '" + fileToMove.getName() + "/" + newFile.getName() + "' access error during copying");
+                Logger.writeExceptionLog("files '" + fileToMove.getName() + "/" + newFile.getName() + "' access error during copying");
             } catch (Exception e) {
-                System.out.println("Exception");
+                System.out.println("error while copying file '" + fileToMove.getName() + "'");
+                Logger.writeExceptionLog("error while copying file '" + fileToMove.getName() + "'");
             }
         }
         isFileDeleted = fileToMove.delete();
@@ -118,7 +162,7 @@ public class FileHandlerUtils {
                 amountLine = line;
             }
         }
-        if (amountLine.substring((amountLine.length()-3), amountLine.length()-2).equals(",")) {
+        if (amountLine.substring((amountLine.length() - 3), amountLine.length() - 2).equals(",")) {
             amountLine = amountLine.replace(".", "");
             amountLine = amountLine.replace(",", ".");
         } else {
@@ -128,12 +172,7 @@ public class FileHandlerUtils {
         Matcher matcher = pattern.matcher(amountLine);
 
         if (matcher.find()) {
-            String group = matcher.group();
-            try {
-                result = new BigDecimal(group);
-            } catch (NumberFormatException e) {
-                System.out.println("NumberFormatException");
-            }
+            result = new BigDecimal(matcher.group());
         }
         return result;
     }
