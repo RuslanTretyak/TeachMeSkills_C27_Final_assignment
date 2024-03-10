@@ -5,12 +5,13 @@ import validation.FileContentValidator;
 import validation.FileNameValidator;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class FileHandler {
+public class FileHandlerUtils {
     public static List<File> getFilesFromDirectory(String directoryPath, FileNamePattern fileNamePattern) {
         File file = new File(directoryPath);
         List<File> rowListOfFiles;
@@ -49,27 +50,27 @@ public class FileHandler {
         return resultData;
     }
 
-    public static double processFiles(FileNamePattern fileNamePattern, Map<String, List<String>> listOfData) {
-        double sum = 0;
+    public static BigDecimal processFiles(FileNamePattern fileNamePattern, Map<String, List<String>> listOfData) {
+        BigDecimal sum = new BigDecimal(0);
         for (Map.Entry<String, List<String>> entry : listOfData.entrySet()) {
             switch (fileNamePattern) {
                 case CHECK_NAME_PATTERN:
                     if (FileContentValidator.checkCheckContentValid(entry.getValue())) {
-                        sum += getAmount(entry.getValue(), CheckContentPatterns.AMOUNT_LINE);
+                        sum = sum.add(getAmount(entry.getValue(), CheckContentPatterns.AMOUNT_LINE));
                     } else {
                         moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
                     }
                     break;
                 case INVOICE_NAME_PATTERN:
                     if (FileContentValidator.checkInvoiceContentValid(entry.getValue())) {
-                        sum += getAmount(entry.getValue(), InvoiceContentPatterns.AMOUNT_LINE);
+                        sum = sum.add(getAmount(entry.getValue(), InvoiceContentPatterns.AMOUNT_LINE));
                     } else {
                         moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
                     }
                     break;
                 case ORDER_NAME_PATTERN:
                     if (FileContentValidator.checkOrderContentValid(entry.getValue())) {
-                        sum += getAmount(entry.getValue(), OrderContentPattern.AMOUNT_LINE);
+                        sum = sum.add(getAmount(entry.getValue(), OrderContentPattern.AMOUNT_LINE));
                     } else {
                         moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
                     }
@@ -109,15 +110,16 @@ public class FileHandler {
         return isFileCreated && isFileCopied && isFileDeleted;
     }
 
-    private static double getAmount(List<String> lines, String amountPattern) {
-        double result = 0;
+    private static BigDecimal getAmount(List<String> lines, String amountPattern) {
+        BigDecimal result = new BigDecimal(0);
         String amountLine = "0";
         for (String line : lines) {
             if (line.toLowerCase().matches(amountPattern)) {
                 amountLine = line;
             }
         }
-        if (amountPattern.equals(CheckContentPatterns.AMOUNT_LINE)) {
+        if (amountLine.substring((amountLine.length()-3), amountLine.length()-2).equals(",")) {
+            amountLine = amountLine.replace(".", "");
             amountLine = amountLine.replace(",", ".");
         } else {
             amountLine = amountLine.replaceAll(",", "");
@@ -128,7 +130,7 @@ public class FileHandler {
         if (matcher.find()) {
             String group = matcher.group();
             try {
-                result = Double.parseDouble(group);
+                result = new BigDecimal(group);
             } catch (NumberFormatException e) {
                 System.out.println("NumberFormatException");
             }
