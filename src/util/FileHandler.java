@@ -1,11 +1,13 @@
 package util;
 
-import consts.FileNamePattern;
-import consts.FilePathConst;
+import consts.*;
+import validation.FileContentValidator;
 import validation.FileNameValidator;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class FileHandler {
@@ -21,7 +23,7 @@ public class FileHandler {
                 if (FileNameValidator.isFileValid(fileNamePattern.getPattern(), tempFile)) {
                     resultListOfFiles.add(tempFile);
                 } else {
-                    moveFile(tempFile);
+                    moveFile(tempFile, FilePathConst.NON_VALID_FILE_PATH);
                 }
             }
         } else {
@@ -52,11 +54,25 @@ public class FileHandler {
         for (Map.Entry<String, List<String>> entry : listOfData.entrySet()) {
             switch (fileNamePattern) {
                 case CHECK_NAME_PATTERN:
-
+                    if (FileContentValidator.checkCheckContentValid(entry.getValue())) {
+                        sum += getAmount(entry.getValue(), CheckContentPatterns.AMOUNT_LINE);
+                    } else {
+                        moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                    }
                     break;
                 case INVOICE_NAME_PATTERN:
+                    if (FileContentValidator.checkInvoiceContentValid(entry.getValue())) {
+                        sum += getAmount(entry.getValue(), InvoiceContentPatterns.AMOUNT_LINE);
+                    } else {
+                        moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                    }
                     break;
                 case ORDER_NAME_PATTERN:
+                    if (FileContentValidator.checkOrderContentValid(entry.getValue())) {
+                        sum += getAmount(entry.getValue(), OrderContentPattern.AMOUNT_LINE);
+                    } else {
+                        moveFile(new File(entry.getKey()), FilePathConst.NON_VALID_FILE_PATH);
+                    }
                     break;
             }
         }
@@ -65,12 +81,58 @@ public class FileHandler {
 
     private static boolean moveFile(File fileToMove, FilePathConst pathToMove) {
         File newFile = new File(pathToMove.getPath() + "\\" + fileToMove.getName());
-        boolean isFileCreate
+        boolean isFileCreated = false;
+        boolean isFileCopied = false;
+        boolean isFileDeleted;
         try {
-            newFile.createNewFile();
-
+            isFileCreated = newFile.createNewFile();
+        } catch (IOException e) {
+            System.out.println("IOex");
+        } catch (Exception e) {
+            System.out.println("ex");
         }
+        if (isFileCreated) {
+            try (FileInputStream fileInputStream = new FileInputStream(fileToMove);
+                 FileOutputStream fileOutputStream = new FileOutputStream(newFile)) {
+                fileOutputStream.write(fileInputStream.readAllBytes());
+                isFileCopied = true;
 
-        return true;
+            } catch (FileNotFoundException e) {
+                System.out.println("FileNotFoundException");
+            } catch (IOException e) {
+                System.out.println("IOException");
+            } catch (Exception e) {
+                System.out.println("Exception");
+            }
+        }
+        isFileDeleted = fileToMove.delete();
+        return isFileCreated && isFileCopied && isFileDeleted;
+    }
+
+    private static double getAmount(List<String> lines, String amountPattern) {
+        double result = 0;
+        String amountLine = "0";
+        for (String line : lines) {
+            if (line.toLowerCase().matches(amountPattern)) {
+                amountLine = line;
+            }
+        }
+        if (amountPattern.equals(CheckContentPatterns.AMOUNT_LINE)) {
+            amountLine = amountLine.replace(",", ".");
+        } else {
+            amountLine = amountLine.replaceAll(",", "");
+        }
+        Pattern pattern = Pattern.compile("[0-9(,)*]+(.[0-9]{2})?");
+        Matcher matcher = pattern.matcher(amountLine);
+
+        if (matcher.find()) {
+            String group = matcher.group();
+            try {
+                result = Double.parseDouble(group);
+            } catch (NumberFormatException e) {
+                System.out.println("NumberFormatException");
+            }
+        }
+        return result;
     }
 }

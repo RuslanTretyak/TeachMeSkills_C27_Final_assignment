@@ -19,13 +19,16 @@ public class Main {
         for (Map.Entry<String, List<String>> entry : map.entrySet()) {
             System.out.println(entry.getKey() + " == " + FileContentValidator.checkCheckContentValid(entry.getValue()));
         }
+        System.out.println(FileHandler.processFiles(FileNamePattern.CHECK_NAME_PATTERN, map));
         Map<String, List<String>> map2 = FileHandler.getDataFromFiles(FileHandler.getFilesFromDirectory("D:\\Java\\Final_assignment\\TeachMeSkills_C27_Final_assignment\\data\\invoices", FileNamePattern.INVOICE_NAME_PATTERN));
         for (Map.Entry<String, List<String>> entry : map2.entrySet()) {
             System.out.println(entry.getKey() + " == " + FileContentValidator.checkInvoiceContentValid(entry.getValue()));
         }
+        System.out.println(FileHandler.processFiles(FileNamePattern.INVOICE_NAME_PATTERN, map2));
         Map<String, List<String>> map3 = FileHandler.getDataFromFiles(FileHandler.getFilesFromDirectory("D:\\Java\\Final_assignment\\TeachMeSkills_C27_Final_assignment\\data\\orders", FileNamePattern.ORDER_NAME_PATTERN));
         for (Map.Entry<String, List<String>> entry : map3.entrySet()) {
             System.out.println(entry.getKey() + " == " + FileContentValidator.checkOrderContentValid(entry.getValue()));
         }
+        System.out.println(FileHandler.processFiles(FileNamePattern.ORDER_NAME_PATTERN, map3));
     }
 }
