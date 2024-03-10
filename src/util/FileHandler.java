@@ -1,6 +1,7 @@
 package util;
 
 import consts.FileNamePattern;
+import consts.FilePathConst;
 import validation.FileNameValidator;
 
 import java.io.*;
@@ -62,8 +63,14 @@ public class FileHandler {
         return sum;
     }
 
-    private static boolean moveFile(File fileToMove) {
-        //TODO add logic
+    private static boolean moveFile(File fileToMove, FilePathConst pathToMove) {
+        File newFile = new File(pathToMove.getPath() + "\\" + fileToMove.getName());
+        boolean isFileCreate
+        try {
+            newFile.createNewFile();
+
+        }
+
         return true;
     }
 }

@@ -17,11 +17,15 @@ public class Main {
         System.out.println(FileHandler.getDataFromFiles(FileHandler.getFilesFromDirectory("D:\\Java\\Final_assignment\\TeachMeSkills_C27_Final_assignment\\data\\invoices", FileNamePattern.INVOICE_NAME_PATTERN)));
         Map<String, List<String>> map = FileHandler.getDataFromFiles(FileHandler.getFilesFromDirectory("D:\\Java\\Final_assignment\\TeachMeSkills_C27_Final_assignment\\data\\checks", FileNamePattern.CHECK_NAME_PATTERN));
         for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-            System.out.println(entry.getKey() + " == " + FileContentValidator.isCheckContentValid(entry.getValue()));
+            System.out.println(entry.getKey() + " == " + FileContentValidator.checkCheckContentValid(entry.getValue()));
         }
         Map<String, List<String>> map2 = FileHandler.getDataFromFiles(FileHandler.getFilesFromDirectory("D:\\Java\\Final_assignment\\TeachMeSkills_C27_Final_assignment\\data\\invoices", FileNamePattern.INVOICE_NAME_PATTERN));
         for (Map.Entry<String, List<String>> entry : map2.entrySet()) {
-            System.out.println(entry.getKey() + " == " + FileContentValidator.isInvoiceContentValid(entry.getValue()));
+            System.out.println(entry.getKey() + " == " + FileContentValidator.checkInvoiceContentValid(entry.getValue()));
+        }
+        Map<String, List<String>> map3 = FileHandler.getDataFromFiles(FileHandler.getFilesFromDirectory("D:\\Java\\Final_assignment\\TeachMeSkills_C27_Final_assignment\\data\\orders", FileNamePattern.ORDER_NAME_PATTERN));
+        for (Map.Entry<String, List<String>> entry : map3.entrySet()) {
+            System.out.println(entry.getKey() + " == " + FileContentValidator.checkOrderContentValid(entry.getValue()));
         }
     }
 }
