@@ -3,7 +3,6 @@ package service;
 import consts.FileNamePattern;
 import util.FileHandlerUtils;
 import util.StatisticWriter;
-
 import java.math.BigDecimal;
 
 public class FileHandler {
