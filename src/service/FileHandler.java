@@ -9,7 +9,18 @@ import util.StatisticWriter;
 import java.io.File;
 import java.math.BigDecimal;
 
+
 public class FileHandler {
+
+    /**
+     * processes files and calculates statistics from them
+     * <p>
+     * Checks the entered path to the folder with files for validity (the folder must contain receipts, invoice and orders folders).
+     * Selects valid files based on their corresponding template and summarizes statistics on these files.
+     * Statistics for each type of file and general statistics are recorded in a separate file.
+     * Invalid files are transferred to a separate folder.
+      * @param directory object of the "File" class indicating the path to the folder with the files being processed
+     */
     public static void handleFiles(File directory) {
         Logger.writeExecuteLog("folder processing started");
         boolean isDirectoryPathCorrect = false;
